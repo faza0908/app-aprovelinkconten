@@ -28,7 +28,7 @@ def main():
         admin_password = os.getenv("ADMIN_PASSWORD", "").strip()
         admin_nama = os.getenv("ADMIN_NAMA", "Administrator").strip()
 
-        if not admin_password or admin_password == "ganti_password_ini_sebelum_deploy":
+        if not admin_password or admin_password == "admin":
             print(
                 "\n⚠️  PERINGATAN: ADMIN_PASSWORD di file .env belum diganti dari nilai "
                 "default. Silakan ubah dulu di .env sebelum menjalankan script ini di "
