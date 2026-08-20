@@ -1,0 +1,9 @@
+streamlit>=1.38
+SQLAlchemy>=2.0
+bcrypt>=4.1
+python-dotenv>=1.0
+pandas>=2.0
+
+# Untuk production dengan PostgreSQL, tambahkan salah satu driver berikut
+# (uncomment baris di bawah):
+# psycopg2-binary>=2.9
