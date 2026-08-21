@@ -69,22 +69,22 @@ def halaman_login():
 
 
 # ---------------------------------------------------------------------------
-# Halaman: Dashboard Humas
+# Halaman: Dashboard Konten
 # ---------------------------------------------------------------------------
 
 def halaman_humas():
     auth.role_required(RoleEnum.humas)
-    st.title("📤 Dashboard Humas")
+    st.title("📤 Dashboard Konten")
 
     session = get_session()
     try:
         with st.expander("➕ Tambah Konten Baru", expanded=False):
             with st.form("form_tambah_konten", clear_on_submit=True):
-                link = st.text_input("Link konten (URL)")
                 platform = st.selectbox(
-                    "Platform", ["Instagram", "TikTok", "Facebook", "X (Twitter)", "YouTube", "Lainnya"]
+                "Bagian Balai", ["SATKER BBWS", "SNVT Pelaksanaan Jaringan Sumber Air", "SNVT Pelaksanaan Jaringan Pemanfaatan Air", "SATKER Operasi dan Pemeliharaan SDA", "SNVT Pembangunan Bendungan I", "SNVT Pembangunan Bendungan II", "SNVT Air Tanah dan Air Baku"]
                 )
-                keterangan = st.text_area("Keterangan (opsional)")
+                link = st.text_input("Link konten (URL)")
+                caption = st.text_area("Caption")
                 submit = st.form_submit_button("Simpan & Kirim untuk Review")
 
                 if submit:
@@ -94,7 +94,7 @@ def halaman_humas():
                         konten = Konten(
                             link=link.strip(),
                             platform=platform,
-                            keterangan=keterangan.strip() or None,
+                            caption=caption.strip() or None,
                             humas_id=st.session_state.user_id,
                         )
                         session.add(konten)
@@ -131,8 +131,8 @@ def halaman_humas():
                 with col1:
                     st.markdown(f"**[{k.platform or 'Link'}]({k.link})**")
                     st.caption(k.link)
-                    if k.keterangan:
-                        st.write(k.keterangan)
+                    if k.caption:
+                        st.write(k.caption)
                     st.caption(f"Dikirim: {k.tanggal_input.strftime('%d %b %Y %H:%M')}")
                 with col2:
                     st.write(badge_approval(k.status_approval))
@@ -179,8 +179,8 @@ def halaman_atasan():
                     with col1:
                         st.markdown(f"**[{k.platform or 'Link'}]({k.link})**")
                         st.caption(k.link)
-                        if k.keterangan:
-                            st.write(k.keterangan)
+                        if k.caption:
+                            st.write(k.caption)
                         st.caption(
                             f"Diajukan oleh: {k.dibuat_oleh.nama_lengkap} · "
                             f"{k.tanggal_input.strftime('%d %b %Y %H:%M')}"
