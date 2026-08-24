@@ -16,8 +16,32 @@ Base = declarative_base()
 
 class RoleEnum(str, enum.Enum):
     humas = "humas"
-    atasan = "atasan"
+    atasan_utu = "atasan_utu"       # Bagian UTU
+    atasan_balai = "atasan_balai"   # Bagian Balai (mencakup banyak SATKER/SNVT,
+                                     # tapi tetap satu kategori user)
     admin = "admin"
+
+
+ROLE_LABELS = {
+    RoleEnum.humas: "Humas",
+    RoleEnum.atasan_utu: "Bagian UTU",
+    RoleEnum.atasan_balai: "Bagian Balai",
+    RoleEnum.admin: "Admin",
+}
+
+# Daftar unit/satker di bawah Bagian Balai. Ini HANYA label informasi
+# (menunjukkan konten itu terkait unit yang mana), BUKAN penentu siapa yang
+# me-review -- semua user dengan role atasan_balai tetap satu kategori yang
+# sama dan bisa melihat/approve semua konten, apa pun unit yang dipilih.
+DAFTAR_UNIT_BALAI = [
+    "SATKER BBWS",
+    "SNVT Pelaksanaan Jaringan Sumber Air",
+    "SNVT Pelaksanaan Jaringan Pemanfaatan Air",
+    "SATKER Operasi dan Pemeliharaan SDA",
+    "SNVT Pembangunan Bendungan I",
+    "SNVT Pembangunan Bendungan II",
+    "SNVT Air Tanah dan Air Baku",
+]
 
 
 class StatusApprovalEnum(str, enum.Enum):
@@ -49,25 +73,40 @@ class User(Base):
 
 
 class Konten(Base):
+    """
+    Setiap konten butuh persetujuan dari DUA pihak secara independen:
+    Bagian UTU dan Bagian Balai. Karena itu status approval disimpan sebagai
+    dua pasang kolom terpisah (utu & balai), bukan satu status gabungan.
+    """
     __tablename__ = "konten"
 
     id = Column(Integer, primary_key=True)
     link = Column(String(1000), nullable=False)
-    platform = Column(String(50), nullable=True)  # Instagram, TikTok, dll (opsional)
-    keterangan = Column(Text, nullable=True)
+    unit_balai = Column(String(200), nullable=True)  # pilihan dari DAFTAR_UNIT_BALAI
+    caption = Column(Text, nullable=True)
 
     humas_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     dibuat_oleh = relationship(
         "User", back_populates="konten_dibuat", foreign_keys=[humas_id]
     )
 
-    status_approval = Column(
+    # --- Persetujuan Bagian UTU ---
+    status_approval_utu = Column(
         Enum(StatusApprovalEnum), default=StatusApprovalEnum.menunggu, nullable=False
     )
-    catatan_atasan = Column(Text, nullable=True)
-    disetujui_oleh_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    disetujui_oleh = relationship("User", foreign_keys=[disetujui_oleh_id])
-    tanggal_approval = Column(DateTime, nullable=True)
+    catatan_utu = Column(Text, nullable=True)
+    disetujui_utu_oleh_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    disetujui_utu_oleh = relationship("User", foreign_keys=[disetujui_utu_oleh_id])
+    tanggal_approval_utu = Column(DateTime, nullable=True)
+
+    # --- Persetujuan Bagian Balai ---
+    status_approval_balai = Column(
+        Enum(StatusApprovalEnum), default=StatusApprovalEnum.menunggu, nullable=False
+    )
+    catatan_balai = Column(Text, nullable=True)
+    disetujui_balai_oleh_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    disetujui_balai_oleh = relationship("User", foreign_keys=[disetujui_balai_oleh_id])
+    tanggal_approval_balai = Column(DateTime, nullable=True)
 
     status_upload = Column(
         Enum(StatusUploadEnum), default=StatusUploadEnum.belum, nullable=False
@@ -78,6 +117,19 @@ class Konten(Base):
 
     # Riwayat perubahan status disimpan sebagai log terpisah (audit trail)
     log = relationship("LogAktivitas", back_populates="konten", cascade="all, delete-orphan")
+
+    def disetujui_penuh(self) -> bool:
+        """True hanya jika KEDUA pihak (UTU dan Balai) sudah menyetujui."""
+        return (
+            self.status_approval_utu == StatusApprovalEnum.disetujui
+            and self.status_approval_balai == StatusApprovalEnum.disetujui
+        )
+
+    def ada_penolakan(self) -> bool:
+        return (
+            self.status_approval_utu == StatusApprovalEnum.ditolak
+            or self.status_approval_balai == StatusApprovalEnum.ditolak
+        )
 
 
 class LogAktivitas(Base):

@@ -10,13 +10,56 @@ Keamanan yang diterapkan:
 """
 
 import bcrypt
+import os
 import time
 import streamlit as st
 from sqlalchemy import select
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from models import User, RoleEnum
 
 MAX_PERCOBAAN = 5
 JEDA_DETIK_SETELAH_GAGAL = 30
+
+# Token login disimpan di cookie browser agar sesi tidak hilang saat halaman
+# di-refresh. Token ini ditandatangani (signed) pakai APP_SECRET_KEY, jadi
+# tidak bisa dipalsukan oleh user meskipun mereka bisa melihat isi cookie-nya.
+SESSION_COOKIE_NAME = "humas_app_session"
+SESSION_MAX_AGE_DETIK = 60 * 60 * 24 * 7  # token berlaku 7 hari
+
+
+def _get_secret_key() -> str:
+    secret = os.getenv("APP_SECRET_KEY", "").strip()
+    if not secret:
+        # Fallback ini hanya untuk development. Untuk production, WAJIB
+        # isi APP_SECRET_KEY di .env / Secrets, jika tidak sesi akan
+        # otomatis logout tiap kali aplikasi restart.
+        secret = "dev-only-insecure-secret-key-ganti-ini"
+    return secret
+
+
+def _serializer() -> URLSafeTimedSerializer:
+    return URLSafeTimedSerializer(_get_secret_key())
+
+
+def buat_session_token(user: User) -> str:
+    """Membuat token berisi identitas user, ditandatangani agar tidak bisa dipalsukan."""
+    payload = {
+        "user_id": user.id,
+        "username": user.username,
+        "nama_lengkap": user.nama_lengkap,
+        "role": user.role.value,
+    }
+    return _serializer().dumps(payload)
+
+
+def baca_session_token(token: str):
+    """Mengembalikan payload dict jika token valid & belum kedaluwarsa, None jika tidak."""
+    if not token:
+        return None
+    try:
+        return _serializer().loads(token, max_age=SESSION_MAX_AGE_DETIK)
+    except (BadSignature, SignatureExpired):
+        return None
 
 
 def hash_password(plain_password: str) -> str:
@@ -91,3 +134,12 @@ def role_required(*roles: RoleEnum):
 def logout():
     for key in ["user_id", "username", "nama_lengkap", "role"]:
         st.session_state.pop(key, None)
+
+
+def set_login_state(user: User):
+    """Simpan status login ke session_state. Cookie diisi terpisah oleh app.py
+    karena butuh akses ke CookieController yang diinisialisasi di sana."""
+    st.session_state.user_id = user.id
+    st.session_state.username = user.username
+    st.session_state.nama_lengkap = user.nama_lengkap
+    st.session_state.role = user.role.value
