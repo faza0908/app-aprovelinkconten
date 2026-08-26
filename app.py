@@ -224,9 +224,9 @@ def halaman_atasan(role: RoleEnum):
                     col1, col2 = st.columns([4, 2])
                     with col1:
                         st.markdown(f"**{k.unit_balai or '-'}**")
-                        st.caption(k.link)
+                        st.caption(f"Link Content: {k.link}")
                         if k.caption:
-                            st.write(k.caption)
+                            st.write(f"Caption: {k.caption}")
                         st.caption(
                             f"Diajukan oleh: {k.dibuat_oleh.nama_lengkap} · "
                             f"{k.tanggal_input.strftime('%d %b %Y %H:%M')}"
