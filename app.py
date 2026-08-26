@@ -116,7 +116,6 @@ def badge_upload(status: StatusUploadEnum) -> str:
 # ---------------------------------------------------------------------------
 
 def halaman_login():
-    st.icon("images.png")
     st.title("Aplikasi Persetujuan Konten Media Sosial")
     st.caption("Silakan login untuk melanjutkan.")
 
