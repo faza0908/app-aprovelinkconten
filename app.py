@@ -14,6 +14,55 @@ import auth
 
 st.set_page_config(page_title="Persetujuan Konten Medsos", page_icon="📋", layout="wide")
 
+
+def inject_custom_theme():
+    """
+    Styling tambahan di luar yang bisa diatur lewat .streamlit/config.toml,
+    supaya tampilan makin dekat dengan warna referensi:
+    - Sidebar biru tua dengan teks putih (biar tetap kebaca)
+    - Tombol utama warna kuning emas (aksen), teks gelap
+    - Garis aksen kuning emas tipis di bawah judul halaman
+    """
+    st.markdown(
+        """
+        <style>
+        /* Sidebar biru tua, teks putih supaya kontras */
+        [data-testid="stSidebar"] {
+            background-color: #0B6E9E;
+        }
+        [data-testid="stSidebar"] * {
+            color: #FFFFFF !important;
+        }
+
+        /* Tombol utama: kuning emas dengan teks gelap */
+        div.stButton > button {
+            background-color: #F5B301;
+            color: #132A3A;
+            border: none;
+            font-weight: 600;
+        }
+        div.stButton > button:hover {
+            background-color: #d99e10;
+            color: #FFFFFF;
+        }
+        [data-testid="stSidebar"] div.stButton > button {
+            background-color: #F5B301;
+            color: #132A3A;
+        }
+
+        /* Garis aksen kuning emas tipis di bawah judul halaman */
+        h1 {
+            border-bottom: 4px solid #F5B301;
+            padding-bottom: 0.4rem;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+inject_custom_theme()
+
 # Pastikan tabel sudah ada setiap kali app dijalankan (idempotent, aman diulang).
 init_db()
 
@@ -224,9 +273,9 @@ def halaman_atasan(role: RoleEnum):
                     col1, col2 = st.columns([4, 2])
                     with col1:
                         st.markdown(f"**{k.unit_balai or '-'}**")
-                        st.write(f"Link Content: {k.link}")
+                        st.caption(k.link)
                         if k.caption:
-                            st.write(f"Caption: {k.caption}")
+                            st.write(k.caption)
                         st.caption(
                             f"Diajukan oleh: {k.dibuat_oleh.nama_lengkap} · "
                             f"{k.tanggal_input.strftime('%d %b %Y %H:%M')}"

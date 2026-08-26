@@ -1,0 +1,14 @@
+# Salin folder ini menjadi ".streamlit" (tanpa "_template") di root project,
+# supaya Streamlit otomatis membaca tema warna kustom ini.
+#
+# Warna diambil dari header website referensi:
+# - Biru tua (topbar/sidebar)  : #0B6E9E
+# - Kuning emas (aksen/tombol) : #F5B301
+# - Teks gelap                 : #132A3A
+
+[theme]
+primaryColor = "#F5B301"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#0B6E9E"
+textColor = "#132A3A"
+font = "sans serif"
