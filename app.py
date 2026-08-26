@@ -24,7 +24,7 @@ def inject_custom_theme():
     - Garis aksen kuning emas tipis di bawah judul halaman
     """
     st.markdown(
-        """
+        
         <style>
   
         [data-testid="stSidebar"] * {
@@ -53,7 +53,7 @@ def inject_custom_theme():
             padding-bottom: 0.4rem;
         }
         </style>
-        """,
+        ,
         unsafe_allow_html=True,
     )
 
