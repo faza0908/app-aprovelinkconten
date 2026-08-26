@@ -224,7 +224,7 @@ def halaman_atasan(role: RoleEnum):
                     col1, col2 = st.columns([4, 2])
                     with col1:
                         st.markdown(f"**{k.unit_balai or '-'}**")
-                        st.caption(f"Link Content: {k.link}")
+                        st.write(f"Link Content: {k.link}")
                         if k.caption:
                             st.write(f"Caption: {k.caption}")
                         st.caption(
