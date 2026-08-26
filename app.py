@@ -42,7 +42,7 @@ def inject_custom_theme():
             font-weight: 600;
         }
         div.stButton > button:hover {
-
+            background-color: #d99e10;
             color: #FFFFFF;
         }
         [data-testid="stSidebar"] div.stButton > button {
@@ -54,6 +54,27 @@ def inject_custom_theme():
         h1 {
             border-bottom: 4px solid #F5B301;
             padding-bottom: 0.4rem;
+        }
+                /* Kotak input (text, textarea, dropdown) dibuat putih -- tanpa ini,
+           Streamlit otomatis memakai secondaryBackgroundColor (biru) untuk
+           semua kotak input, bukan cuma sidebar. */
+        [data-testid="stTextInput"] input,
+        [data-testid="stTextArea"] textarea,
+        [data-baseweb="select"] > div,
+        [data-baseweb="base-input"] {
+            background-color: #FFFFFF !important;
+            color: #132A3A !important;
+        }
+        [data-testid="stTextInput"] input::placeholder,
+        [data-testid="stTextArea"] textarea::placeholder {
+            color: #8a8a8a !important;
+        }
+ 
+        /* Header expander ("Tambah Konten Baru") dibuat putih juga, bukan
+           biru muda bawaan tema */
+        [data-testid="stExpander"] summary {
+            background-color: #FFFFFF !important;
+            color: #132A3A !important;
         }
         </style>
         """,
