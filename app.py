@@ -24,11 +24,14 @@ def inject_custom_theme():
     - Garis aksen kuning emas tipis di bawah judul halaman
     """
     st.markdown(
-        
+        """
         <style>
-  
-        [data-testid="stSidebar"] * {
+        /* Sidebar biru tua, teks putih supaya kontras */
+        [data-testid="stSidebar"] {
             color: #FFFFFF !important;
+        }
+        [data-testid="stSidebar"] * {
+            background-color: #0B6E9E;
         }
 
         /* Tombol utama: kuning emas dengan teks gelap */
@@ -53,7 +56,7 @@ def inject_custom_theme():
             padding-bottom: 0.4rem;
         }
         </style>
-        ,
+        """,
         unsafe_allow_html=True,
     )
 
