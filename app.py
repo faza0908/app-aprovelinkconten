@@ -26,10 +26,7 @@ def inject_custom_theme():
     st.markdown(
         """
         <style>
-        /* Sidebar biru tua, teks putih supaya kontras */
-        [data-testid="stSidebar"] {
-            background-color: #0B6E9E;
-        }
+  
         [data-testid="stSidebar"] * {
             color: #FFFFFF !important;
         }
@@ -115,7 +112,7 @@ def badge_upload(status: StatusUploadEnum) -> str:
 # ---------------------------------------------------------------------------
 
 def halaman_login():
-    st.title("📋 Aplikasi Persetujuan Konten Media Sosial")
+    st.title("Aplikasi Persetujuan Konten Media Sosial")
     st.caption("Silakan login untuk melanjutkan.")
 
     diblokir, sisa = auth.sedang_diblokir()
