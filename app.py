@@ -12,7 +12,7 @@ from models import (
 )
 import auth
 
-st.set_page_config(page_title="Persetujuan Konten Medsos", page_icon="📋", layout="wide")
+st.set_page_config(page_title="Persetujuan Konten Medsos", page_icon="images.png", layout="wide")
 
 
 def inject_custom_theme():
