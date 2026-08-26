@@ -116,7 +116,11 @@ def badge_upload(status: StatusUploadEnum) -> str:
 # ---------------------------------------------------------------------------
 
 def halaman_login():
-    st.title("Aplikasi Persetujuan Konten Media Sosial")
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.image("images.png", width=80)
+    with col2:
+        st.title(" Aplikasi Persetujuan Konten Media Sosial")
     st.caption("Silakan login untuk melanjutkan.")
 
     diblokir, sisa = auth.sedang_diblokir()
