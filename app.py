@@ -28,10 +28,10 @@ def inject_custom_theme():
         <style>
         /* Sidebar biru tua, teks putih supaya kontras */
         [data-testid="stSidebar"] {
-            color: #FFFFFF !important;
+            background-color: #0B6E9E;
         }
         [data-testid="stSidebar"] * {
-            background-color: #0B6E9E;
+            color: #FFFFFF !important;
         }
 
         /* Tombol utama: kuning emas dengan teks gelap */
