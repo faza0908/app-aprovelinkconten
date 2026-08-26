@@ -12,7 +12,7 @@ from models import (
 )
 import auth
 
-st.set_page_config(page_title="Persetujuan Konten Medsos", page_icon="images.png", layout="wide")
+st.set_page_config(page_title="Persetujuan Konten Medsos", page_icon="📋", layout="wide")
 
 
 def inject_custom_theme():
@@ -56,6 +56,27 @@ def inject_custom_theme():
             padding-bottom: 0.4rem;
         }
 
+        /* Kotak input (text, textarea, dropdown) dibuat putih -- tanpa ini,
+           Streamlit otomatis memakai secondaryBackgroundColor (biru) untuk
+           semua kotak input, bukan cuma sidebar. */
+        [data-testid="stTextInput"] input,
+        [data-testid="stTextArea"] textarea,
+        [data-baseweb="select"] > div,
+        [data-baseweb="base-input"] {
+            background-color: #FFFFFF !important;
+            color: #132A3A !important;
+        }
+        [data-testid="stTextInput"] input::placeholder,
+        [data-testid="stTextArea"] textarea::placeholder {
+            color: #8a8a8a !important;
+        }
+
+        /* Header expander ("Tambah Konten Baru") dibuat putih juga, bukan
+           biru muda bawaan tema */
+        [data-testid="stExpander"] summary {
+            background-color: #FFFFFF !important;
+            color: #132A3A !important;
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -115,9 +136,27 @@ def badge_upload(status: StatusUploadEnum) -> str:
 # Halaman: Login
 # ---------------------------------------------------------------------------
 
-def halaman_login():    
-    st.title("Aplikasi Persetujuan Konten Media Sosial")
+def halaman_login():
+    col_logo, col_judul = st.columns([1, 8], gap="medium", vertical_alignment="center")
+    with col_logo:
+        st.image("img.png", width=70)
+    with col_judul:
+        # border-bottom dimatikan khusus di sini (inline style menang atas
+        # aturan h1 global) karena garis aksen full-width digambar terpisah
+        # di bawah, supaya tetap selebar halaman meski judul ada di kolom.
+        st.markdown(
+            "<h1 style='border-bottom:none; margin-bottom:0;'>"
+            "Aplikasi Persetujuan Konten Media Sosial</h1>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(
+        "<hr style='border:none; border-top:4px solid #F5B301; "
+        "margin-top:0.3rem; margin-bottom:1.2rem;'>",
+        unsafe_allow_html=True,
+    )
     st.caption("Silakan login untuk melanjutkan.")
+
     diblokir, sisa = auth.sedang_diblokir()
 
     with st.form("form_login"):
