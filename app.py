@@ -52,7 +52,7 @@ def inject_custom_theme():
 
         /* Garis aksen kuning emas tipis di bawah judul halaman */
         h1 {
-            border-bottom: 4px solid #0B6E9E;
+            border-bottom: 4px solid #F5B301;
             padding-bottom: 0.4rem;
         }
 
