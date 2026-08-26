@@ -139,7 +139,7 @@ def badge_upload(status: StatusUploadEnum) -> str:
 def halaman_login():
     col_logo, col_judul = st.columns([1, 8], gap="medium", vertical_alignment="center")
     with col_logo:
-        st.image("img.png", width=70)
+        st.image("images.png", width=70)
     with col_judul:
         # border-bottom dimatikan khusus di sini (inline style menang atas
         # aturan h1 global) karena garis aksen full-width digambar terpisah
