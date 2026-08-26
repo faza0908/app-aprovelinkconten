@@ -28,7 +28,7 @@ def inject_custom_theme():
         <style>
         /* Sidebar biru tua, teks putih supaya kontras */
         [data-testid="stSidebar"] {
-            background-color: #0B6E9E;
+            background-color: #F5B301;
         }
         [data-testid="stSidebar"] * {
             color: #FFFFFF !important;
@@ -36,7 +36,7 @@ def inject_custom_theme():
 
         /* Tombol utama: kuning emas dengan teks gelap */
         div.stButton > button {
-            background-color: #F5B301;
+            background-color: #0B6E9E;
             color: #132A3A;
             border: none;
             font-weight: 600;
@@ -46,7 +46,7 @@ def inject_custom_theme():
             color: #FFFFFF;
         }
         [data-testid="stSidebar"] div.stButton > button {
-            background-color: #F5B301;
+            background-color: #0B6E9E;
             color: #132A3A;
         }
 
@@ -55,27 +55,7 @@ def inject_custom_theme():
             border-bottom: 4px solid #F5B301;
             padding-bottom: 0.4rem;
         }
-                /* Kotak input (text, textarea, dropdown) dibuat putih -- tanpa ini,
-           Streamlit otomatis memakai secondaryBackgroundColor (biru) untuk
-           semua kotak input, bukan cuma sidebar. */
-        [data-testid="stTextInput"] input,
-        [data-testid="stTextArea"] textarea,
-        [data-baseweb="select"] > div,
-        [data-baseweb="base-input"] {
-            background-color: #FFFFFF !important;
-            color: #132A3A !important;
-        }
-        [data-testid="stTextInput"] input::placeholder,
-        [data-testid="stTextArea"] textarea::placeholder {
-            color: #8a8a8a !important;
-        }
- 
-        /* Header expander ("Tambah Konten Baru") dibuat putih juga, bukan
-           biru muda bawaan tema */
-        [data-testid="stExpander"] summary {
-            background-color: #FFFFFF !important;
-            color: #132A3A !important;
-        }
+
         </style>
         """,
         unsafe_allow_html=True,
