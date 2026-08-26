@@ -42,7 +42,7 @@ def inject_custom_theme():
             font-weight: 600;
         }
         div.stButton > button:hover {
-            background-color: #d99e10;
+
             color: #FFFFFF;
         }
         [data-testid="stSidebar"] div.stButton > button {
