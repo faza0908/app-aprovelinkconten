@@ -8,7 +8,7 @@
 
 [theme]
 primaryColor = "#F5B301"
-backgroundColor = "#0B6E9E"
-secondaryBackgroundColor = "#FFFFFF"
+
+BackgroundColor = "#FFFFFF"
 textColor = "#132A3A"
 font = "sans serif"
