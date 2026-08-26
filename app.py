@@ -28,7 +28,7 @@ def inject_custom_theme():
         <style>
         /* Sidebar biru tua, teks putih supaya kontras */
         [data-testid="stSidebar"] {
-            background-color: #F5B301;
+            background-color: #0B6E9E;
         }
         [data-testid="stSidebar"] * {
             color: #FFFFFF !important;
@@ -36,7 +36,7 @@ def inject_custom_theme():
 
         /* Tombol utama: kuning emas dengan teks gelap */
         div.stButton > button {
-            background-color: #0B6E9E;
+            background-color: #F5B301;
             color: #132A3A;
             border: none;
             font-weight: 600;
@@ -46,13 +46,13 @@ def inject_custom_theme():
             color: #FFFFFF;
         }
         [data-testid="stSidebar"] div.stButton > button {
-            background-color: #0B6E9E;
+            background-color: #F5B301;
             color: #132A3A;
         }
 
         /* Garis aksen kuning emas tipis di bawah judul halaman */
         h1 {
-            border-bottom: 4px solid #F5B301;
+            border-bottom: 4px solid #0B6E9E;
             padding-bottom: 0.4rem;
         }
 
