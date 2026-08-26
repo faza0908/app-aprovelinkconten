@@ -12,7 +12,7 @@ from models import (
 )
 import auth
 
-st.set_page_config(page_title="Persetujuan Konten Medsos", page_icon="📋", layout="wide")
+st.set_page_config(page_title="Persetujuan Konten Medsos", page_icon="images.png", layout="wide")
 
 
 def inject_custom_theme():
@@ -116,6 +116,7 @@ def badge_upload(status: StatusUploadEnum) -> str:
 # ---------------------------------------------------------------------------
 
 def halaman_login():
+    st.icon("images.png")
     st.title("Aplikasi Persetujuan Konten Media Sosial")
     st.caption("Silakan login untuk melanjutkan.")
 
