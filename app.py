@@ -239,7 +239,6 @@ def halaman_login():
     set_background_login()
 
     with st.container(key="login_card"):
-        st.image("images.png", width=90)
         st.markdown(
             "<h2 style='color:#132A3A; margin-top:1rem; margin-bottom:0.2rem;'>Aplikasi Persetujuan Konten</h2>",
             unsafe_allow_html=True,
