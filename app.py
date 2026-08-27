@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import base64
+import os
 from datetime import datetime
 from sqlalchemy import select, desc
 from streamlit_cookies_controller import CookieController
@@ -18,11 +20,10 @@ st.set_page_config(page_title="Persetujuan Konten Medsos", page_icon="images.png
 def set_background_login():
     """
     Menata halaman login: gambar latar full-page (kalau file 'background.jpg'
-    ada di folder project) + kartu putih terpusat untuk form login, mirip
-    desain halaman sign-in modern.
- 
+    ada di folder project) + kartu putih terpusat untuk form login.
+
     Kalau file 'background.jpg' belum ada, otomatis fallback ke gradient
-    warna biru supaya halaman tetap terlihat rapi (tidak polos putih kosong).
+    warna biru supaya halaman tetap terlihat rapi.
     """
     if os.path.exists("sharing-knowledge-bbws-pomjen-danau-rawapening.jpg"):
         with open("sharing-knowledge-bbws-pomjen-danau-rawapening.jpg", "rb") as f:
@@ -32,7 +33,7 @@ def set_background_login():
         background_css = (
             "background: linear-gradient(135deg, #0B6E9E 0%, #14324a 100%);"
         )
- 
+
     st.markdown(
         f"""
         <style>
@@ -54,6 +55,87 @@ def set_background_login():
             max-width: 420px;
             margin: 8vh auto 0 auto;
         }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def inject_custom_theme():
+    """
+    Styling tambahan di luar yang bisa diatur lewat .streamlit/config.toml,
+    supaya tampilan makin dekat dengan warna referensi:
+    - Sidebar biru tua dengan teks putih (biar tetap kebaca)
+    - Tombol utama warna kuning emas (aksen), teks gelap
+    - Garis aksen kuning emas tipis di bawah judul halaman
+    """
+    st.markdown(
+        """
+        <style>
+        /* Sidebar biru tua, teks putih supaya kontras */
+        [data-testid="stSidebar"] {
+            background-color: #0B6E9E;
+        }
+        [data-testid="stSidebar"] * {
+            color: #FFFFFF !important;
+        }
+
+        /* Tombol utama: kuning emas dengan teks gelap */
+        div.stButton > button {
+            background-color: #F5B301;
+            color: #132A3A;
+            border: none;
+            font-weight: 600;
+        }
+        div.stButton > button:hover {
+            background-color: #d99e10;
+            color: #FFFFFF;
+        }
+        [data-testid="stSidebar"] div.stButton > button {
+            background-color: #F5B301;
+            color: #132A3A;
+        }
+
+        /* Garis aksen kuning emas tipis di bawah judul halaman */
+        h1 {
+            border-bottom: 4px solid #F5B301;
+            padding-bottom: 0.4rem;
+        }
+
+        /* Kotak input (text, textarea, dropdown) dibuat putih -- tanpa ini,
+           Streamlit otomatis memakai secondaryBackgroundColor (biru) untuk
+           semua kotak input, bukan cuma sidebar. */
+        [data-testid="stTextInput"] input,
+        [data-testid="stTextArea"] textarea,
+        [data-baseweb="select"] > div,
+        [data-baseweb="base-input"] {
+            background-color: #FFFFFF !important;
+            color: #132A3A !important;
+        }
+        [data-testid="stTextInput"] input::placeholder,
+        [data-testid="stTextArea"] textarea::placeholder {
+            color: #8a8a8a !important;
+        }
+
+        /* Header expander ("Tambah Konten Baru") dibuat putih juga, bukan
+           biru muda bawaan tema */
+        [data-testid="stExpander"] summary {
+            background-color: #FFFFFF !important;
+            color: #132A3A !important;
+        }
+
+        /* Tombol submit form (Login, Simpan, dst) dibuat biru tua, beda dari
+           tombol aksi biasa (Setujui/Tolak/Logout) yang tetap kuning emas */
+        [data-testid="stFormSubmitButton"] button {
+            background-color: #0B6E9E !important;
+            color: #FFFFFF !important;
+            border: none;
+            font-weight: 600;
+        }
+        [data-testid="stFormSubmitButton"] button:hover {
+            background-color: #084f70 !important;
+            color: #FFFFFF !important;
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -109,40 +191,70 @@ def badge_upload(status: StatusUploadEnum) -> str:
     return "✅ Sudah Diupload" if status == StatusUploadEnum.sudah else "⏳ Belum Diupload"
 
 
+def ambil_ringkasan_sidebar(session, role: str, user_id: int):
+    """Mengembalikan list (label, angka) untuk ditampilkan sebagai ringkasan
+    singkat di sidebar, disesuaikan dengan role user yang sedang login."""
+    if role == RoleEnum.humas.value:
+        semua = session.execute(
+            select(Konten).where(Konten.humas_id == user_id)
+        ).scalars().all()
+        menunggu = sum(
+            1 for k in semua
+            if k.status_approval_utu == StatusApprovalEnum.menunggu
+            or k.status_approval_balai == StatusApprovalEnum.menunggu
+        )
+        siap_upload = sum(
+            1 for k in semua
+            if k.disetujui_penuh() and k.status_upload == StatusUploadEnum.belum
+        )
+        return [("Sedang Direview", menunggu), ("Siap Diupload", siap_upload)]
+
+    if role == RoleEnum.atasan_utu.value:
+        jumlah = session.execute(
+            select(Konten).where(Konten.status_approval_utu == StatusApprovalEnum.menunggu)
+        ).scalars().all()
+        return [("Menunggu Review", len(jumlah))]
+
+    if role == RoleEnum.atasan_balai.value:
+        jumlah = session.execute(
+            select(Konten).where(Konten.status_approval_balai == StatusApprovalEnum.menunggu)
+        ).scalars().all()
+        return [("Menunggu Review", len(jumlah))]
+
+    if role == RoleEnum.admin.value:
+        total_konten = session.execute(select(Konten)).scalars().all()
+        total_user = session.execute(
+            select(User).where(User.aktif == 1)
+        ).scalars().all()
+        return [("Total Konten", len(total_konten)), ("User Aktif", len(total_user))]
+
+    return []
+
+
 # ---------------------------------------------------------------------------
 # Halaman: Login
 # ---------------------------------------------------------------------------
 
 def halaman_login():
-    col_logo, col_judul = st.columns([1, 8], gap="medium", vertical_alignment="center")
-    with col_logo:
-        st.image("images.png", width=70)
-    with col_judul:
-        # border-bottom dimatikan khusus di sini (inline style menang atas
-        # aturan h1 global) karena garis aksen full-width digambar terpisah
-        # di bawah, supaya tetap selebar halaman meski judul ada di kolom.
+    set_background_login()
+
+    with st.container(key="login_card"):
+        st.image("images.png", width=90)
         st.markdown(
-            "<h1 style='border-bottom:none; margin-bottom:0;'>"
-            "Aplikasi Persetujuan Konten Media Sosial</h1>",
+            "<h2 style='color:#132A3A; margin-top:1rem; margin-bottom:0.2rem;'>Masuk</h2>",
             unsafe_allow_html=True,
         )
+        st.caption("Masuk ke akun Anda untuk melanjutkan.")
 
-    st.markdown(
-        "<hr style='border:none; border-top:4px solid #F5B301; "
-        "margin-top:0.3rem; margin-bottom:1.2rem;'>",
-        unsafe_allow_html=True,
-    )
-    st.caption("Silakan login untuk melanjutkan.")
+        diblokir, sisa = auth.sedang_diblokir()
 
-    diblokir, sisa = auth.sedang_diblokir()
+        with st.form("form_login"):
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submit = st.form_submit_button("Masuk", disabled=diblokir, use_container_width=True)
 
-    with st.form("form_login"):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        submit = st.form_submit_button("Login", disabled=diblokir, use_container_width=True)
-
-    if diblokir:
-        st.error(f"Terlalu banyak percobaan gagal. Coba lagi dalam {sisa} detik.")
+        if diblokir:
+            st.error(f"Terlalu banyak percobaan gagal. Coba lagi dalam {sisa} detik.")
 
     if submit and not diblokir:
         session = get_session()
@@ -419,13 +531,37 @@ def main():
         return
 
     with st.sidebar:
+        st.image("images.png", width=90)
+        st.markdown("### Persetujuan Konten Medsos")
+        st.divider()
+
         st.markdown(f"👤 **{st.session_state.nama_lengkap}**")
         label_role = ROLE_LABELS.get(RoleEnum(st.session_state.role), st.session_state.role)
         st.caption(f"Role: {label_role}")
+
+        st.divider()
+        st.markdown("**Ringkasan**")
+        session_sidebar = get_session()
+        try:
+            for label, angka in ambil_ringkasan_sidebar(
+                session_sidebar, st.session_state.role, st.session_state.user_id
+            ):
+                st.metric(label, angka)
+        finally:
+            session_sidebar.close()
+
+        st.divider()
         if st.button("Logout", use_container_width=True):
             auth.logout()
             cookies.remove(auth.SESSION_COOKIE_NAME)
             st.rerun()
+
+        st.markdown(
+            "<div style='margin-top:2rem; opacity:0.7; font-size:0.8rem;'>"
+            "Aplikasi Persetujuan Konten Medsos · v1.0"
+            "</div>",
+            unsafe_allow_html=True,
+        )
 
     role = st.session_state.role
     if role == RoleEnum.humas.value:
