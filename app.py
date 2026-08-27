@@ -241,7 +241,7 @@ def halaman_login():
     with st.container(key="login_card"):
         st.image("images.png", width=90)
         st.markdown(
-            "<h2 style='color:#132A3A; margin-top:1rem; margin-bottom:0.2rem;'>Masuk</h2>",
+            "<h2 style='color:#132A3A; margin-top:1rem; margin-bottom:0.2rem;'>Aplikasi Persetujuan Konten</h2>",
             unsafe_allow_html=True,
         )
         st.caption("Masuk ke akun Anda untuk melanjutkan.")
