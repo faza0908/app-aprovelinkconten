@@ -236,16 +236,12 @@ def ambil_ringkasan_sidebar(session, role: str, user_id: int):
 # ---------------------------------------------------------------------------
 
 def halaman_login():
-    col_logo, col_judul = st.columns([1, 8], gap="medium", vertical_alignment="center")
-    with col_logo:
-        st.image("images.png", width=70)
-    with col_judul:
-        # border-bottom dimatikan khusus di sini (inline style menang atas
-        # aturan h1 global) karena garis aksen full-width digambar terpisah
-        # di bawah, supaya tetap selebar halaman meski judul ada di kolom.
-        st.markdown(
-            "<h1 style='border-bottom:none; margin-bottom:0;'>"
-            "Aplikasi Persetujuan Konten Media Sosial</h1>",
+    set_background_login()
+
+    with st.container(key="login_card"):
+        
+        st.markdown(st.image("images.png", width=90) +
+            "<h2 style='color:#132A3A; margin-top:1rem; margin-bottom:0.2rem;'>Aplikasi Persetujuan Konten</h2>",
             unsafe_allow_html=True,
         )
         st.caption("Masuk ke akun Anda untuk melanjutkan.")
