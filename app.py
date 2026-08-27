@@ -15,68 +15,45 @@ import auth
 st.set_page_config(page_title="Persetujuan Konten Medsos", page_icon="images.png", layout="wide")
 
 
-def inject_custom_theme():
+def set_background_login():
     """
-    Styling tambahan di luar yang bisa diatur lewat .streamlit/config.toml,
-    supaya tampilan makin dekat dengan warna referensi:
-    - Sidebar biru tua dengan teks putih (biar tetap kebaca)
-    - Tombol utama warna kuning emas (aksen), teks gelap
-    - Garis aksen kuning emas tipis di bawah judul halaman
+    Menata halaman login: gambar latar full-page (kalau file 'background.jpg'
+    ada di folder project) + kartu putih terpusat untuk form login, mirip
+    desain halaman sign-in modern.
+ 
+    Kalau file 'background.jpg' belum ada, otomatis fallback ke gradient
+    warna biru supaya halaman tetap terlihat rapi (tidak polos putih kosong).
     """
+    if os.path.exists("background.jpg"):
+        with open("background.jpg", "rb") as f:
+            b64 = base64.b64encode(f.read()).decode()
+        background_css = f'background-image: url("data:image/jpg;base64,{b64}");'
+    else:
+        background_css = (
+            "background: linear-gradient(135deg, #0B6E9E 0%, #14324a 100%);"
+        )
+ 
     st.markdown(
-        """
+        f"""
         <style>
-        /* Sidebar biru tua, teks putih supaya kontras */
-        [data-testid="stSidebar"] {
-            background-color: #0B6E9E;
-        }
-        [data-testid="stSidebar"] * {
-            color: #FFFFFF !important;
-        }
-
-        /* Tombol utama: kuning emas dengan teks gelap */
-        div.stButton > button {
-            background-color: #F5B301;
-            color: #132A3A;
-            border: none;
-            font-weight: 600;
-        }
-        div.stButton > button:hover {
-            background-color: #d99e10;
-            color: #FFFFFF;
-        }
-        [data-testid="stSidebar"] div.stButton > button {
-            background-color: #F5B301;
-            color: #132A3A;
-        }
-
-        /* Garis aksen kuning emas tipis di bawah judul halaman */
-        h1 {
-            border-bottom: 4px solid #F5B301;
-            padding-bottom: 0.4rem;
-        }
-
-        /* Kotak input (text, textarea, dropdown) dibuat putih -- tanpa ini,
-           Streamlit otomatis memakai secondaryBackgroundColor (biru) untuk
-           semua kotak input, bukan cuma sidebar. */
-        [data-testid="stTextInput"] input,
-        [data-testid="stTextArea"] textarea,
-        [data-baseweb="select"] > div,
-        [data-baseweb="base-input"] {
-            background-color: #FFFFFF !important;
-            color: #132A3A !important;
-        }
-        [data-testid="stTextInput"] input::placeholder,
-        [data-testid="stTextArea"] textarea::placeholder {
-            color: #8a8a8a !important;
-        }
-
-        /* Header expander ("Tambah Konten Baru") dibuat putih juga, bukan
-           biru muda bawaan tema */
-        [data-testid="stExpander"] summary {
-            background-color: #FFFFFF !important;
-            color: #132A3A !important;
-        }
+        .stApp {{
+            {background_css}
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }}
+        .block-container {{
+            padding-top: 3rem;
+        }}
+        /* Kartu putih login, dipusatkan di tengah halaman */
+        .st-key-login_card {{
+            background-color: #FFFFFF;
+            padding: 2.5rem 2.5rem 2rem 2.5rem;
+            border-radius: 14px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            max-width: 420px;
+            margin: 8vh auto 0 auto;
+        }}
         </style>
         """,
         unsafe_allow_html=True,
