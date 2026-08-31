@@ -549,38 +549,33 @@ with st.sidebar:
             "line-height:1.25; color:#FFFFFF;'>Aplikasi Persetujuan Konten</div>",
             unsafe_allow_html=True,
         )
-    st.markdown(
-        "<hr style='border:none; border-top:3px solid #F5B301; "
-        "margin-top:0.7rem; margin-bottom:1rem;'>",
-        unsafe_allow_html=True,
-    )
+        
+        st.divider()
 
-    st.divider()
+        st.markdown(f"👤 **{st.session_state.nama_lengkap}**")
+        label_role = ROLE_LABELS.get(RoleEnum(st.session_state.role), st.session_state.role)
+        st.caption(f"Role: {label_role}")
 
-    st.markdown(f"👤 **{st.session_state.nama_lengkap}**")
-    label_role = ROLE_LABELS.get(RoleEnum(st.session_state.role), st.session_state.role)
-    st.caption(f"Role: {label_role}")
+        st.divider()
+        st.markdown("**Ringkasan**")
+        session_sidebar = get_session()
+        try:
+            for label, angka in ambil_ringkasan_sidebar(
+                session_sidebar, st.session_state.role, st.session_state.user_id
+            ):
+                st.metric(label, angka)
+        finally:
+            session_sidebar.close()
 
-    st.divider()
-    st.markdown("**Ringkasan**")
-    session_sidebar = get_session()
-    try:
-        for label, angka in ambil_ringkasan_sidebar(
-            session_sidebar, st.session_state.role, st.session_state.user_id
-        ):
-            st.metric(label, angka)
-    finally:
-        session_sidebar.close()
+        st.divider()
+        if st.button("Logout", use_container_width=True):
+            auth.logout()
+            cookies.remove(auth.SESSION_COOKIE_NAME)
+            st.rerun()
 
-    st.divider()
-    if st.button("Logout", use_container_width=True):
-        auth.logout()
-        cookies.remove(auth.SESSION_COOKIE_NAME)
-        st.rerun()
-
-    st.markdown(
-        "<div style='margin-top:2rem; opacity:0.7; font-size:0.8rem;'>"
-        "Aplikasi Persetujuan Konten Medsos · v1.0"
+        st.markdown(
+            "<div style='margin-top:2rem; opacity:0.7; font-size:0.8rem;'>"
+            "Aplikasi Persetujuan Konten Medsos · v1.0"
             "</div>",
             unsafe_allow_html=True,
         )
