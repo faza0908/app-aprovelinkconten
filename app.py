@@ -250,7 +250,7 @@ def halaman_login():
 
     with st.container(key="login_card"):
         st.markdown(
-            "<h1 style='color:#132A3A; margin-top:1rem; margin-bottom:0.2rem;'>APLIKASI PERSETUJUAN KONTEN</h1>",
+            "<h2 style='color:#132A3A; margin-top:1rem; margin-bottom:0.2rem;'>APLIKASI PERSETUJUAN KONTEN</h2>",
             unsafe_allow_html=True,
         )
         st.caption("Masuk ke akun Anda untuk melanjutkan.")
@@ -291,7 +291,7 @@ def halaman_login():
 
 def halaman_humas():
     auth.role_required(RoleEnum.humas)
-    st.title("📤 Dashboard Konten")
+    st.title("Dashboard Konten")
 
     session = get_session()
     try:
@@ -389,7 +389,7 @@ def halaman_atasan(role: RoleEnum):
         kolom_oleh = "disetujui_balai_oleh_id"
         kolom_tanggal = "tanggal_approval_balai"
 
-    st.title(f"✅ Dashboard {label_pihak} — Review Konten")
+    st.title(f"Dashboard {label_pihak} — Review Konten")
 
     session = get_session()
     try:
