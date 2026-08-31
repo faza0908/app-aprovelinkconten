@@ -540,8 +540,14 @@ def main():
         return
 
     with st.sidebar:
-        st.image("images.png", width=90)
-        st.markdown("### Persetujuan Konten Medsos")
+            col1, col2 = st.columns([1, 5])
+    with col1:
+        st.image("images.png", width=60)
+    with col2:
+        st.markdown("### Aplikasi Persetujuan Konten")
+    
+        
+        
         st.divider()
 
         st.markdown(f"👤 **{st.session_state.nama_lengkap}**")
