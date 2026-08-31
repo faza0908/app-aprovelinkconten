@@ -538,24 +538,27 @@ def main():
     if "user_id" not in st.session_state:
         halaman_login()
         return
-
-with st.sidebar:
-    col_logo, col_judul = st.columns([1, 3], gap="small", vertical_alignment="center")
-    with col_logo:
-        st.image("images.png", width=50)
-    with col_judul:
+ 
+    with st.sidebar:
+        col_logo, col_judul = st.columns([1, 3], gap="small", vertical_alignment="center")
+        with col_logo:
+            st.image("images.png", width=50)
+        with col_judul:
+            st.markdown(
+                "<div style='font-weight:700; font-size:1.05rem; "
+                "line-height:1.25; color:#FFFFFF;'>Aplikasi Persetujuan Konten</div>",
+                unsafe_allow_html=True,
+            )
         st.markdown(
-            "<div style='font-weight:700; font-size:1.05rem; "
-            "line-height:1.25; color:#FFFFFF;'>Aplikasi Persetujuan Konten</div>",
+            "<hr style='border:none; border-top:3px solid #F5B301; "
+            "margin-top:0.7rem; margin-bottom:1rem;'>",
             unsafe_allow_html=True,
         )
-        
-        st.divider()
-
+ 
         st.markdown(f"👤 **{st.session_state.nama_lengkap}**")
         label_role = ROLE_LABELS.get(RoleEnum(st.session_state.role), st.session_state.role)
         st.caption(f"Role: {label_role}")
-
+ 
         st.divider()
         st.markdown("**Ringkasan**")
         session_sidebar = get_session()
@@ -566,20 +569,20 @@ with st.sidebar:
                 st.metric(label, angka)
         finally:
             session_sidebar.close()
-
+ 
         st.divider()
         if st.button("Logout", use_container_width=True):
             auth.logout()
             cookies.remove(auth.SESSION_COOKIE_NAME)
             st.rerun()
-
+ 
         st.markdown(
             "<div style='margin-top:2rem; opacity:0.7; font-size:0.8rem;'>"
             "Aplikasi Persetujuan Konten Medsos · v1.0"
             "</div>",
             unsafe_allow_html=True,
         )
-
+ 
     role = st.session_state.role
     if role == RoleEnum.humas.value:
         halaman_humas()
@@ -612,7 +615,7 @@ with st.sidebar:
                     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
             finally:
                 session.close()
-
-
+ 
+ 
 if __name__ == "__main__":
     main()
