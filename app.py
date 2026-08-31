@@ -544,7 +544,7 @@ def main():
     with col1:
         st.image("images.png", width=40)
     with col2:
-        st.markdown("#### Aplikasi Persetujuan Konten")
+        st.markdown("### Aplikasi Persetujuan Konten")
     
         
         
