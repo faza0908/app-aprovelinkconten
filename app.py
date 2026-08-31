@@ -250,7 +250,7 @@ def halaman_login():
 
     with st.container(key="login_card"):
         st.markdown(
-            "<h2 style='color:#132A3A; margin-top:1rem; margin-bottom:0.2rem;'>APLIKASI PERSETUJUAN KONTEN</h2>",
+            "<h1 style='color:#132A3A; margin-top:1rem; margin-bottom:0.2rem;'>APLIKASI PERSETUJUAN KONTEN</h1>",
             unsafe_allow_html=True,
         )
         st.caption("Masuk ke akun Anda untuk melanjutkan.")
