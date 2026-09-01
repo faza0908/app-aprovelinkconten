@@ -297,7 +297,7 @@ def halaman_humas():
     try:
         with st.expander("➕ Tambah Konten Baru", expanded=False):
             with st.form("form_tambah_konten", clear_on_submit=True):
-                unit_balai = st.selectbox("Bagian Balai", DAFTAR_UNIT_BALAI)
+                unit_balai = st.selectbox("Bidang / Satker", DAFTAR_UNIT_BALAI)
                 link = st.text_input("Link konten (URL)")
                 caption = st.text_area("Caption")
                 submit = st.form_submit_button("Simpan & Kirim untuk Review")
