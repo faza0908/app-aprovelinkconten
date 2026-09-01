@@ -292,7 +292,7 @@ def halaman_login():
 def halaman_humas():
     auth.role_required(RoleEnum.humas)
     st.title("Dashboard Konten")
-
+ 
     session = get_session()
     try:
         with st.expander("➕ Tambah Konten Baru", expanded=False):
@@ -301,7 +301,7 @@ def halaman_humas():
                 link = st.text_input("Link konten (URL)")
                 caption = st.text_area("Caption")
                 submit = st.form_submit_button("Simpan & Kirim untuk Review")
-
+ 
                 if submit:
                     if not link.strip():
                         st.error("Link konten wajib diisi.")
@@ -321,54 +321,75 @@ def halaman_humas():
                         session.commit()
                         st.success("Konten berhasil dikirim untuk direview Bagian UTU dan Bagian Balai.")
                         st.rerun()
-
-        st.subheader("Daftar Konten Saya")
-
-        query = select(Konten).where(
-            Konten.humas_id == st.session_state.user_id
-        ).order_by(desc(Konten.tanggal_input))
-        daftar = session.execute(query).scalars().all()
-
-        if not daftar:
-            st.info("Belum ada konten.")
-            return
-
-        for k in daftar:
-            with st.container(border=True):
-                col1, col2 = st.columns([4, 3])
-                with col1:
-                    st.markdown(f"**{k.unit_balai or '-'}**")
-                    st.caption(k.link)
-                    if k.caption:
-                        st.write(k.caption)
-                    st.caption(f"Dikirim: {k.tanggal_input.strftime('%d %b %Y %H:%M')}")
-                with col2:
-                    c1, c2 = st.columns(2)
-                    c1.markdown("**Bagian UTU**")
-                    c1.write(badge_approval(k.status_approval_utu))
-                    if k.catatan_utu:
-                        c1.warning(k.catatan_utu)
-
-                    c2.markdown("**Bagian Balai**")
-                    c2.write(badge_approval(k.status_approval_balai))
-                    if k.catatan_balai:
-                        c2.warning(k.catatan_balai)
-
-                    st.write(badge_upload(k.status_upload))
-
-                    if k.disetujui_penuh() and k.status_upload == StatusUploadEnum.belum:
-                        if st.button("✅ Tandai Sudah Diupload", key=f"upload_{k.id}", use_container_width=True):
-                            k.status_upload = StatusUploadEnum.sudah
-                            k.tanggal_upload = datetime.utcnow()
-                            catat_log(session, k.id, st.session_state.user_id, "Menandai konten sudah diupload")
-                            session.commit()
-                            st.rerun()
-                    elif not k.disetujui_penuh() and not k.ada_penolakan():
-                        st.caption("Menunggu persetujuan dari kedua pihak sebelum bisa ditandai upload.")
+ 
+        tab_saya, tab_semua = st.tabs(["📤 Konten Saya", "📊 Riwayat Semua Konten"])
+ 
+        with tab_saya:
+            query = select(Konten).where(
+                Konten.humas_id == st.session_state.user_id
+            ).order_by(desc(Konten.tanggal_input))
+            daftar = session.execute(query).scalars().all()
+ 
+            if not daftar:
+                st.info("Belum ada konten.")
+            else:
+                for k in daftar:
+                    with st.container(border=True):
+                        col1, col2 = st.columns([4, 3])
+                        with col1:
+                            st.markdown(f"**{k.unit_balai or '-'}**")
+                            st.caption(k.link)
+                            if k.caption:
+                                st.write(k.caption)
+                            st.caption(f"Dikirim: {k.tanggal_input.strftime('%d %b %Y %H:%M')}")
+                        with col2:
+                            c1, c2 = st.columns(2)
+                            c1.markdown("**Bagian UTU**")
+                            c1.write(badge_approval(k.status_approval_utu))
+                            if k.catatan_utu:
+                                c1.warning(k.catatan_utu)
+ 
+                            c2.markdown("**Bagian Balai**")
+                            c2.write(badge_approval(k.status_approval_balai))
+                            if k.catatan_balai:
+                                c2.warning(k.catatan_balai)
+ 
+                            st.write(badge_upload(k.status_upload))
+ 
+                            if k.disetujui_penuh() and k.status_upload == StatusUploadEnum.belum:
+                                if st.button("✅ Tandai Sudah Diupload", key=f"upload_{k.id}", use_container_width=True):
+                                    k.status_upload = StatusUploadEnum.sudah
+                                    k.tanggal_upload = datetime.utcnow()
+                                    catat_log(session, k.id, st.session_state.user_id, "Menandai konten sudah diupload")
+                                    session.commit()
+                                    st.rerun()
+                            elif not k.disetujui_penuh() and not k.ada_penolakan():
+                                st.caption("Menunggu persetujuan dari kedua pihak sebelum bisa ditandai upload.")
+ 
+        with tab_semua:
+            daftar_semua = session.execute(
+                select(Konten).order_by(desc(Konten.tanggal_input))
+            ).scalars().all()
+ 
+            if not daftar_semua:
+                st.info("Belum ada data.")
+            else:
+                rows = []
+                for k in daftar_semua:
+                    rows.append({
+                        "Bagian Balai": k.unit_balai,
+                        "Link": k.link,
+                        "Diajukan Oleh": k.dibuat_oleh.nama_lengkap,
+                        "Status UTU": badge_approval(k.status_approval_utu),
+                        "Status Balai": badge_approval(k.status_approval_balai),
+                        "Status Upload": badge_upload(k.status_upload),
+                        "Tanggal Input": k.tanggal_input.strftime("%d %b %Y %H:%M"),
+                    })
+                st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
     finally:
         session.close()
-
-
+ 
+ 
 # ---------------------------------------------------------------------------
 # Halaman: Dashboard Atasan (dipakai bersama oleh Bagian UTU & Bagian Balai)
 # ---------------------------------------------------------------------------
