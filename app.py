@@ -25,8 +25,8 @@ def set_background_login():
     Kalau file 'background.jpg' belum ada, otomatis fallback ke gradient
     warna biru supaya halaman tetap terlihat rapi.
     """
-    if os.path.exists("sharing-knowledge-bbws-pomjen-danau-rawapening.jpg"):
-        with open("sharing-knowledge-bbws-pomjen-danau-rawapening.jpg", "rb") as f:
+    if os.path.exists("vb bbws pemali juana@3x.png"):
+        with open("vb bbws pemali juana@3x.png", "rb") as f:
             b64 = base64.b64encode(f.read()).decode()
         background_css = f'background-image: url("data:image/jpg;base64,{b64}");'
     else:
