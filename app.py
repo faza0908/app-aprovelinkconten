@@ -10,7 +10,7 @@ from db import init_db, get_session
 from models import (
     User, Konten, LogAktivitas,
     RoleEnum, ROLE_LABELS, DAFTAR_BIDANG_SATKER, DAFTAR_PIHAK_APPROVAL,
-    StatusApprovalEnum, StatusUploadEnum,
+    StatusApprovalEnum, StatusUploadEnum
 )
 import auth
 
