@@ -16,24 +16,26 @@ Base = declarative_base()
 
 class RoleEnum(str, enum.Enum):
     humas = "humas"
-    atasan_utu = "atasan_utu"       # Bagian UTU
-    atasan_balai = "atasan_balai"   # Bagian Balai (mencakup banyak SATKER/SNVT,
-                                     # tapi tetap satu kategori user)
+    atasan_kompu = "atasan_kompu"    # Katim Kompu
+    atasan_utu = "atasan_utu"        # Bagian UTU
+    atasan_balai = "atasan_balai"    # Bidang / Satker (mencakup banyak
+                                       # SATKER/SNVT, tapi tetap satu kategori user)
     admin = "admin"
 
 
 ROLE_LABELS = {
     RoleEnum.humas: "Humas",
+    RoleEnum.atasan_kompu: "Katim Kompu",
     RoleEnum.atasan_utu: "Bagian UTU",
-    RoleEnum.atasan_balai: "Bagian Balai",
+    RoleEnum.atasan_balai: "Bidang / Satker",
     RoleEnum.admin: "Admin",
 }
 
-# Daftar unit/satker di bawah Bagian Balai. Ini HANYA label informasi
+# Daftar unit/satker di bawah Bidang / Satker. Ini HANYA label informasi
 # (menunjukkan konten itu terkait unit yang mana), BUKAN penentu siapa yang
 # me-review -- semua user dengan role atasan_balai tetap satu kategori yang
 # sama dan bisa melihat/approve semua konten, apa pun unit yang dipilih.
-DAFTAR_UNIT_BALAI = [
+DAFTAR_BIDANG_SATKER = [
     "SATKER BBWS",
     "SNVT Pelaksanaan Jaringan Sumber Air",
     "SNVT Pelaksanaan Jaringan Pemanfaatan Air",
@@ -43,16 +45,52 @@ DAFTAR_UNIT_BALAI = [
     "SNVT Air Tanah dan Air Baku",
 ]
 
+# Alias untuk kompatibilitas kalau ada kode lama yang masih memanggil nama lama.
+DAFTAR_UNIT_BALAI = DAFTAR_BIDANG_SATKER
+
 
 class StatusApprovalEnum(str, enum.Enum):
     menunggu = "menunggu"
     disetujui = "disetujui"
-    ditolak = "ditolak"
+    revisi = "revisi"   # sebelumnya bernama "ditolak"; sekarang artinya
+                         # "perlu direvisi Humas", bukan penolakan permanen.
 
 
 class StatusUploadEnum(str, enum.Enum):
     belum = "belum"
     sudah = "sudah"
+
+
+# Definisi 3 pihak approve, dipakai bersama oleh halaman atasan (loop generik)
+# dan halaman humas (untuk render status semua pihak). Urutan di list ini
+# HANYA urutan tampilan -- approval-nya sendiri independen/paralel, ketiga
+# pihak bisa approve kapan saja tanpa menunggu pihak lain.
+DAFTAR_PIHAK_APPROVAL = [
+    {
+        "role": RoleEnum.atasan_kompu,
+        "label": "Katim Kompu",
+        "kolom_status": "status_approval_kompu",
+        "kolom_catatan": "catatan_kompu",
+        "kolom_oleh": "disetujui_kompu_oleh_id",
+        "kolom_tanggal": "tanggal_approval_kompu",
+    },
+    {
+        "role": RoleEnum.atasan_utu,
+        "label": "Bagian UTU",
+        "kolom_status": "status_approval_utu",
+        "kolom_catatan": "catatan_utu",
+        "kolom_oleh": "disetujui_utu_oleh_id",
+        "kolom_tanggal": "tanggal_approval_utu",
+    },
+    {
+        "role": RoleEnum.atasan_balai,
+        "label": "Bidang / Satker",
+        "kolom_status": "status_approval_balai",
+        "kolom_catatan": "catatan_balai",
+        "kolom_oleh": "disetujui_balai_oleh_id",
+        "kolom_tanggal": "tanggal_approval_balai",
+    },
+]
 
 
 class User(Base):
@@ -74,21 +112,30 @@ class User(Base):
 
 class Konten(Base):
     """
-    Setiap konten butuh persetujuan dari DUA pihak secara independen:
-    Bagian UTU dan Bagian Balai. Karena itu status approval disimpan sebagai
-    dua pasang kolom terpisah (utu & balai), bukan satu status gabungan.
+    Setiap konten butuh persetujuan dari TIGA pihak secara independen:
+    Katim Kompu, Bagian UTU, dan Bidang / Satker. Status approval disimpan
+    sebagai tiga pasang kolom terpisah, bukan satu status gabungan.
     """
     __tablename__ = "konten"
 
     id = Column(Integer, primary_key=True)
     link = Column(String(1000), nullable=False)
-    unit_balai = Column(String(200), nullable=True)  # pilihan dari DAFTAR_UNIT_BALAI
+    unit_balai = Column(String(200), nullable=True)  # pilihan dari DAFTAR_BIDANG_SATKER
     caption = Column(Text, nullable=True)
 
     humas_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     dibuat_oleh = relationship(
         "User", back_populates="konten_dibuat", foreign_keys=[humas_id]
     )
+
+    # --- Persetujuan Katim Kompu ---
+    status_approval_kompu = Column(
+        Enum(StatusApprovalEnum), default=StatusApprovalEnum.menunggu, nullable=False
+    )
+    catatan_kompu = Column(Text, nullable=True)
+    disetujui_kompu_oleh_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    disetujui_kompu_oleh = relationship("User", foreign_keys=[disetujui_kompu_oleh_id])
+    tanggal_approval_kompu = Column(DateTime, nullable=True)
 
     # --- Persetujuan Bagian UTU ---
     status_approval_utu = Column(
@@ -99,7 +146,7 @@ class Konten(Base):
     disetujui_utu_oleh = relationship("User", foreign_keys=[disetujui_utu_oleh_id])
     tanggal_approval_utu = Column(DateTime, nullable=True)
 
-    # --- Persetujuan Bagian Balai ---
+    # --- Persetujuan Bidang / Satker ---
     status_approval_balai = Column(
         Enum(StatusApprovalEnum), default=StatusApprovalEnum.menunggu, nullable=False
     )
@@ -119,16 +166,19 @@ class Konten(Base):
     log = relationship("LogAktivitas", back_populates="konten", cascade="all, delete-orphan")
 
     def disetujui_penuh(self) -> bool:
-        """True hanya jika KEDUA pihak (UTU dan Balai) sudah menyetujui."""
+        """True hanya jika KETIGA pihak (Kompu, UTU, Balai) sudah menyetujui."""
         return (
-            self.status_approval_utu == StatusApprovalEnum.disetujui
+            self.status_approval_kompu == StatusApprovalEnum.disetujui
+            and self.status_approval_utu == StatusApprovalEnum.disetujui
             and self.status_approval_balai == StatusApprovalEnum.disetujui
         )
 
-    def ada_penolakan(self) -> bool:
+    def ada_revisi(self) -> bool:
+        """True kalau ada minimal satu pihak yang minta revisi (belum dikonfirmasi Humas)."""
         return (
-            self.status_approval_utu == StatusApprovalEnum.ditolak
-            or self.status_approval_balai == StatusApprovalEnum.ditolak
+            self.status_approval_kompu == StatusApprovalEnum.revisi
+            or self.status_approval_utu == StatusApprovalEnum.revisi
+            or self.status_approval_balai == StatusApprovalEnum.revisi
         )
 
 

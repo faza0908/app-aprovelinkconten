@@ -9,7 +9,7 @@ from streamlit_cookies_controller import CookieController
 from db import init_db, get_session
 from models import (
     User, Konten, LogAktivitas,
-    RoleEnum, ROLE_LABELS, DAFTAR_UNIT_BALAI,
+    RoleEnum, ROLE_LABELS, DAFTAR_BIDANG_SATKER, DAFTAR_PIHAK_APPROVAL,
     StatusApprovalEnum, StatusUploadEnum,
 )
 import auth
@@ -25,8 +25,8 @@ def set_background_login():
     Kalau file 'background.jpg' belum ada, otomatis fallback ke gradient
     warna biru supaya halaman tetap terlihat rapi.
     """
-    if os.path.exists("vb bbws pemali juana@3x.png"):
-        with open("vb bbws pemali juana@3x.png", "rb") as f:
+    if os.path.exists("sharing-knowledge-bbws-pomjen-danau-rawapening.jpg"):
+        with open("sharing-knowledge-bbws-pomjen-danau-rawapening.jpg", "rb") as f:
             b64 = base64.b64encode(f.read()).decode()
         background_css = f'background-image: url("data:image/jpg;base64,{b64}");'
     else:
@@ -192,7 +192,7 @@ def badge_approval(status: StatusApprovalEnum) -> str:
     warna = {
         StatusApprovalEnum.menunggu: "🟡 Menunggu",
         StatusApprovalEnum.disetujui: "🟢 Disetujui",
-        StatusApprovalEnum.ditolak: "🔴 Ditolak",
+        StatusApprovalEnum.revisi: "🔄 Perlu Revisi",
     }
     return warna.get(status, str(status))
 
@@ -210,26 +210,29 @@ def ambil_ringkasan_sidebar(session, role: str, user_id: int):
         ).scalars().all()
         menunggu = sum(
             1 for k in semua
-            if k.status_approval_utu == StatusApprovalEnum.menunggu
+            if k.status_approval_kompu == StatusApprovalEnum.menunggu
+            or k.status_approval_utu == StatusApprovalEnum.menunggu
             or k.status_approval_balai == StatusApprovalEnum.menunggu
         )
+        perlu_revisi = sum(1 for k in semua if k.ada_revisi())
         siap_upload = sum(
             1 for k in semua
             if k.disetujui_penuh() and k.status_upload == StatusUploadEnum.belum
         )
-        return [("Sedang Direview", menunggu), ("Siap Diupload", siap_upload)]
+        return [
+            ("Sedang Direview", menunggu),
+            ("Perlu Revisi", perlu_revisi),
+            ("Siap Diupload", siap_upload),
+        ]
 
-    if role == RoleEnum.atasan_utu.value:
-        jumlah = session.execute(
-            select(Konten).where(Konten.status_approval_utu == StatusApprovalEnum.menunggu)
-        ).scalars().all()
-        return [("Menunggu Review", len(jumlah))]
-
-    if role == RoleEnum.atasan_balai.value:
-        jumlah = session.execute(
-            select(Konten).where(Konten.status_approval_balai == StatusApprovalEnum.menunggu)
-        ).scalars().all()
-        return [("Menunggu Review", len(jumlah))]
+    for pihak in DAFTAR_PIHAK_APPROVAL:
+        if role == pihak["role"].value:
+            jumlah = session.execute(
+                select(Konten).where(
+                    getattr(Konten, pihak["kolom_status"]) == StatusApprovalEnum.menunggu
+                )
+            ).scalars().all()
+            return [("Menunggu Review", len(jumlah))]
 
     if role == RoleEnum.admin.value:
         total_konten = session.execute(select(Konten)).scalars().all()
@@ -292,16 +295,16 @@ def halaman_login():
 def halaman_humas():
     auth.role_required(RoleEnum.humas)
     st.title("Dashboard Konten")
- 
+
     session = get_session()
     try:
         with st.expander("➕ Tambah Konten Baru", expanded=False):
             with st.form("form_tambah_konten", clear_on_submit=True):
-                unit_balai = st.selectbox("Bidang / Satker", DAFTAR_UNIT_BALAI)
+                unit_balai = st.selectbox("Bidang / Satker", DAFTAR_BIDANG_SATKER)
                 link = st.text_input("Link konten (URL)")
                 caption = st.text_area("Caption")
                 submit = st.form_submit_button("Simpan & Kirim untuk Review")
- 
+
                 if submit:
                     if not link.strip():
                         st.error("Link konten wajib diisi.")
@@ -316,26 +319,26 @@ def halaman_humas():
                         session.flush()
                         catat_log(
                             session, konten.id, st.session_state.user_id,
-                            "Membuat konten & mengirim untuk review ke Bagian UTU & Bagian Balai"
+                            "Membuat konten & mengirim untuk review ke Katim Kompu, Bagian UTU & Bidang/Satker"
                         )
                         session.commit()
-                        st.success("Konten berhasil dikirim untuk direview Bagian UTU dan Bagian Balai.")
+                        st.success("Konten berhasil dikirim untuk direview Katim Kompu, Bagian UTU, dan Bidang/Satker.")
                         st.rerun()
- 
+
         tab_saya, tab_semua = st.tabs(["📤 Konten Saya", "📊 Riwayat Semua Konten"])
- 
+
         with tab_saya:
             query = select(Konten).where(
                 Konten.humas_id == st.session_state.user_id
             ).order_by(desc(Konten.tanggal_input))
             daftar = session.execute(query).scalars().all()
- 
+
             if not daftar:
                 st.info("Belum ada konten.")
             else:
                 for k in daftar:
                     with st.container(border=True):
-                        col1, col2 = st.columns([4, 3])
+                        col1, col2 = st.columns([4, 5])
                         with col1:
                             st.markdown(f"**{k.unit_balai or '-'}**")
                             st.caption(k.link)
@@ -343,19 +346,32 @@ def halaman_humas():
                                 st.write(k.caption)
                             st.caption(f"Dikirim: {k.tanggal_input.strftime('%d %b %Y %H:%M')}")
                         with col2:
-                            c1, c2 = st.columns(2)
-                            c1.markdown("**Bagian UTU**")
-                            c1.write(badge_approval(k.status_approval_utu))
-                            if k.catatan_utu:
-                                c1.warning(k.catatan_utu)
- 
-                            c2.markdown("**Bagian Balai**")
-                            c2.write(badge_approval(k.status_approval_balai))
-                            if k.catatan_balai:
-                                c2.warning(k.catatan_balai)
- 
+                            kolom_pihak = st.columns(3)
+                            for idx, pihak in enumerate(DAFTAR_PIHAK_APPROVAL):
+                                status = getattr(k, pihak["kolom_status"])
+                                catatan = getattr(k, pihak["kolom_catatan"])
+                                with kolom_pihak[idx]:
+                                    st.markdown(f"**{pihak['label']}**")
+                                    st.write(badge_approval(status))
+                                    if catatan:
+                                        st.warning(catatan)
+                                    if status == StatusApprovalEnum.revisi:
+                                        if st.button(
+                                            "✅ Sudah Direvisi",
+                                            key=f"konfirmasi_revisi_{pihak['role'].value}_{k.id}",
+                                            use_container_width=True,
+                                        ):
+                                            setattr(k, pihak["kolom_status"], StatusApprovalEnum.menunggu)
+                                            catat_log(
+                                                session, k.id, st.session_state.user_id,
+                                                f"Humas mengonfirmasi sudah merevisi untuk {pihak['label']}"
+                                            )
+                                            session.commit()
+                                            st.success(f"Dikonfirmasi. Konten dikirim ulang ke {pihak['label']}.")
+                                            st.rerun()
+
                             st.write(badge_upload(k.status_upload))
- 
+
                             if k.disetujui_penuh() and k.status_upload == StatusUploadEnum.belum:
                                 if st.button("✅ Tandai Sudah Diupload", key=f"upload_{k.id}", use_container_width=True):
                                     k.status_upload = StatusUploadEnum.sudah
@@ -363,33 +379,34 @@ def halaman_humas():
                                     catat_log(session, k.id, st.session_state.user_id, "Menandai konten sudah diupload")
                                     session.commit()
                                     st.rerun()
-                            elif not k.disetujui_penuh() and not k.ada_penolakan():
-                                st.caption("Menunggu persetujuan dari kedua pihak sebelum bisa ditandai upload.")
- 
+                            elif not k.disetujui_penuh() and not k.ada_revisi():
+                                st.caption("Menunggu persetujuan dari ketiga pihak sebelum bisa ditandai upload.")
+
         with tab_semua:
             daftar_semua = session.execute(
                 select(Konten).order_by(desc(Konten.tanggal_input))
             ).scalars().all()
- 
+
             if not daftar_semua:
                 st.info("Belum ada data.")
             else:
                 rows = []
                 for k in daftar_semua:
                     rows.append({
-                        "Bagian Balai": k.unit_balai,
+                        "Bidang / Satker": k.unit_balai,
                         "Link": k.link,
                         "Diajukan Oleh": k.dibuat_oleh.nama_lengkap,
+                        "Status Katim Kompu": badge_approval(k.status_approval_kompu),
                         "Status UTU": badge_approval(k.status_approval_utu),
-                        "Status Balai": badge_approval(k.status_approval_balai),
+                        "Status Bidang/Satker": badge_approval(k.status_approval_balai),
                         "Status Upload": badge_upload(k.status_upload),
                         "Tanggal Input": k.tanggal_input.strftime("%d %b %Y %H:%M"),
                     })
                 st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
     finally:
         session.close()
- 
- 
+
+
 # ---------------------------------------------------------------------------
 # Halaman: Dashboard Atasan (dipakai bersama oleh Bagian UTU & Bagian Balai)
 # ---------------------------------------------------------------------------
@@ -397,18 +414,13 @@ def halaman_humas():
 def halaman_atasan(role: RoleEnum):
     auth.role_required(role)
 
-    if role == RoleEnum.atasan_utu:
-        label_pihak = "Bagian UTU"
-        kolom_status = "status_approval_utu"
-        kolom_catatan = "catatan_utu"
-        kolom_oleh = "disetujui_utu_oleh_id"
-        kolom_tanggal = "tanggal_approval_utu"
-    else:
-        label_pihak = "Bagian Balai"
-        kolom_status = "status_approval_balai"
-        kolom_catatan = "catatan_balai"
-        kolom_oleh = "disetujui_balai_oleh_id"
-        kolom_tanggal = "tanggal_approval_balai"
+    pihak_aktif = next(p for p in DAFTAR_PIHAK_APPROVAL if p["role"] == role)
+    label_pihak = pihak_aktif["label"]
+    kolom_status = pihak_aktif["kolom_status"]
+    kolom_catatan = pihak_aktif["kolom_catatan"]
+    kolom_oleh = pihak_aktif["kolom_oleh"]
+    kolom_tanggal = pihak_aktif["kolom_tanggal"]
+    pihak_lain = [p for p in DAFTAR_PIHAK_APPROVAL if p["role"] != role]
 
     st.title(f"Dashboard {label_pihak} — Review Konten")
 
@@ -438,16 +450,16 @@ def halaman_atasan(role: RoleEnum):
                             f"Diajukan oleh: {k.dibuat_oleh.nama_lengkap} · "
                             f"{k.tanggal_input.strftime('%d %b %Y %H:%M')}"
                         )
-                        st.caption(
-                            f"Status pihak lain — "
-                            f"Bagian UTU: {badge_approval(k.status_approval_utu)} · "
-                            f"Bagian Balai: {badge_approval(k.status_approval_balai)}"
+                        status_pihak_lain = " · ".join(
+                            f"{p['label']}: {badge_approval(getattr(k, p['kolom_status']))}"
+                            for p in pihak_lain
                         )
+                        st.caption(f"Status pihak lain — {status_pihak_lain}")
                     with col2:
                         catatan = st.text_area("Catatan (opsional)", key=f"catatan_{role.value}_{k.id}", height=80)
                         c1, c2 = st.columns(2)
                         with c1:
-                            if st.button("✅ Setujui", key=f"setuju_{role.value}_{k.id}", use_container_width=True):
+                            if st.button("✅ Setuju", key=f"setuju_{role.value}_{k.id}", use_container_width=True):
                                 setattr(k, kolom_status, StatusApprovalEnum.disetujui)
                                 setattr(k, kolom_catatan, catatan.strip() or None)
                                 setattr(k, kolom_oleh, st.session_state.user_id)
@@ -456,12 +468,12 @@ def halaman_atasan(role: RoleEnum):
                                 session.commit()
                                 st.rerun()
                         with c2:
-                            if st.button("❌ Tolak", key=f"tolak_{role.value}_{k.id}", use_container_width=True):
-                                setattr(k, kolom_status, StatusApprovalEnum.ditolak)
+                            if st.button("🔄 Revisi", key=f"revisi_{role.value}_{k.id}", use_container_width=True):
+                                setattr(k, kolom_status, StatusApprovalEnum.revisi)
                                 setattr(k, kolom_catatan, catatan.strip() or None)
                                 setattr(k, kolom_oleh, st.session_state.user_id)
                                 setattr(k, kolom_tanggal, datetime.utcnow())
-                                catat_log(session, k.id, st.session_state.user_id, f"{label_pihak} menolak konten")
+                                catat_log(session, k.id, st.session_state.user_id, f"{label_pihak} meminta revisi konten")
                                 session.commit()
                                 st.rerun()
 
@@ -476,11 +488,12 @@ def halaman_atasan(role: RoleEnum):
                 rows = []
                 for k in daftar_semua:
                     rows.append({
-                        "Bagian Balai": k.unit_balai,
+                        "Bidang / Satker": k.unit_balai,
                         "Link": k.link,
                         "Diajukan Oleh": k.dibuat_oleh.nama_lengkap,
+                        "Status Katim Kompu": badge_approval(k.status_approval_kompu),
                         "Status UTU": badge_approval(k.status_approval_utu),
-                        "Status Balai": badge_approval(k.status_approval_balai),
+                        "Status Bidang/Satker": badge_approval(k.status_approval_balai),
                         "Status Upload": badge_upload(k.status_upload),
                         "Tanggal Input": k.tanggal_input.strftime("%d %b %Y %H:%M"),
                     })
@@ -607,6 +620,8 @@ def main():
     role = st.session_state.role
     if role == RoleEnum.humas.value:
         halaman_humas()
+    elif role == RoleEnum.atasan_kompu.value:
+        halaman_atasan(RoleEnum.atasan_kompu)
     elif role == RoleEnum.atasan_utu.value:
         halaman_atasan(RoleEnum.atasan_utu)
     elif role == RoleEnum.atasan_balai.value:
@@ -625,11 +640,12 @@ def main():
                     st.info("Belum ada data.")
                 else:
                     rows = [{
-                        "Bagian Balai": k.unit_balai,
+                        "Bidang / Satker": k.unit_balai,
                         "Link": k.link,
                         "Diajukan Oleh": k.dibuat_oleh.nama_lengkap,
+                        "Status Katim Kompu": badge_approval(k.status_approval_kompu),
                         "Status UTU": badge_approval(k.status_approval_utu),
-                        "Status Balai": badge_approval(k.status_approval_balai),
+                        "Status Bidang/Satker": badge_approval(k.status_approval_balai),
                         "Status Upload": badge_upload(k.status_upload),
                         "Tanggal Input": k.tanggal_input.strftime("%d %b %Y %H:%M"),
                     } for k in daftar_semua]
